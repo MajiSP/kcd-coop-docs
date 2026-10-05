@@ -1,0 +1,107 @@
+---
+title: Events
+description: Server-side events between resources, and the events the server fires itself.
+---
+
+## AddEventHandler
+
+Adds a handler for an event in this resource.
+
+```lua
+AddEventHandler(name, handler)
+```
+
+- name: `string`
+- handler: `function(...)`
+
+Handlers live until the resource stops; there is no `RemoveEventHandler`. The same handlers run for server events, built-in events and, if the name is registered with [`RegisterNetEvent`](/docs/server/net-events#registernetevent), events sent by players.
+
+```lua
+AddEventHandler('onResourceStop', function(name)
+    if name == GetCurrentResourceName() then
+        print('saving before stop')
+    end
+end)
+```
+
+## TriggerEvent
+
+Runs the handlers of an event in **every running resource**, including this one, right away.
+
+```lua
+TriggerEvent(name, ...)
+```
+
+- name: `string`
+- ...: `any`
+  - Copied for each handler (see [values](/docs/server#values-passed-between-resources)).
+
+**Returns**
+
+- allowed: `boolean`
+  - `false` if any handler called `CancelEvent()`.
+
+Resources are called in alphabetical order, each resource's handlers in the order they were added. All handlers still run after one cancels. `TriggerEvent` never reaches players: use [`TriggerClientEvent`](/docs/server/net-events#triggerclientevent).
+
+```lua
+if TriggerEvent('market:beforeSale', playerId, 'apple', 3) then
+    print('sale allowed')
+end
+```
+
+## CancelEvent
+
+Marks the event being handled as cancelled.
+
+```lua
+CancelEvent()
+```
+
+Only works while a handler runs for `TriggerEvent` or a built-in event. Of the built-in events, only `chatMessage` acts on it.
+
+## Built-in events
+
+The server fires these in every running resource. None of them sets [`source`](/docs/server/net-events#source).
+
+| Event | Arguments | When | Cancel |
+| --- | --- | --- | --- |
+| `playerJoined` | `id` | A player has joined, after they received the world and every resource. | No |
+| `playerDropped` | `id`, `reason` | A player's connection closed. | No |
+| `playerDied` | `id` | A player died. Fires once per life, until they are spawned again. | No |
+| `chatMessage` | `id`, `name`, `text` | A player sent a chat line that does not start with `/`. | **Yes**: the line is not shown. |
+| `onResourceStart` | `name` | A resource finished starting. Also fires in that resource itself. | No |
+| `onResourceStop` | `name` | A resource is about to stop. Also fires in that resource itself. | No |
+
+### playerDropped
+
+`reason` is one of `dropped` ([`DropPlayer`](/docs/server/players#dropplayer)), `kicked`, `banned`, `timeout` or `quit`.
+
+<Callout type="warn">
+  When `playerDropped` fires the player is already gone: `GetPlayerName`, `GetPlayerIdentifiers`, `GetPlayerPosition` and `GetPlayerAppearance` return nothing. Keep what you need from `playerJoined`.
+</Callout>
+
+`DropPlayer` and kicks disconnect a moment later, so `playerDropped` does not fire inside the `DropPlayer` call. Nothing fires for players refused by the allowlist, and no `playerDropped` fires when the server shuts down (resources stop first).
+
+### chatMessage
+
+`text` is at most 160 bytes with control characters removed. Commands (lines starting with `/`) and the console `say` command never fire it.
+
+```lua
+local names = {}
+
+AddEventHandler('playerJoined', function(id)
+    names[id] = GetPlayerName(id)
+end)
+
+AddEventHandler('playerDropped', function(id, reason)
+    print(('%s left (%s)'):format(names[id] or ('#' .. id), reason))
+    names[id] = nil
+end)
+
+AddEventHandler('chatMessage', function(id, name, text)
+    if text:find('badword', 1, true) then
+        CancelEvent()
+        SendChatMessage(id, 'Server', 'Mind your language.')
+    end
+end)
+```

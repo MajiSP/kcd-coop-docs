@@ -1,0 +1,156 @@
+---
+title: Players
+description: Who is online, where they are, who they are, and spawning or removing them.
+---
+
+Functions that take a player `id` accept an integer (or a whole number such as `3.0`). Anything else raises a Lua error. Functions that look a player up return nothing when that player is not online.
+
+## GetPlayers
+
+```lua
+GetPlayers()
+```
+
+**Returns**
+
+- ids: `integer[]`
+  - Everyone online, sorted. Empty when nobody is online.
+
+```lua
+for _, id in ipairs(GetPlayers()) do
+    print(id, GetPlayerName(id))
+end
+```
+
+## GetPlayerName
+
+```lua
+GetPlayerName(id)
+```
+
+- id: `integer`
+
+**Returns**
+
+- name?: `string`
+  - Nothing when the player is not online, which makes it a handy "is online" check.
+
+Names are at most 24 bytes and unique among players online. When the server requires accounts, the name is the player's KCD Co-op account name.
+
+## GetPlayerPosition
+
+```lua
+GetPlayerPosition(id)
+```
+
+- id: `integer`
+
+**Returns**
+
+- x: `number`
+- y: `number`
+- z: `number`
+- heading: `number`
+  - Degrees, from `0` up to `360`.
+
+This is where the player's own game last said it was. Before the first update it is `0, 0, 0, 0`, or the position last given to [`SpawnPlayer`](#spawnplayer).
+
+## GetPlayerPing
+
+```lua
+GetPlayerPing(id)
+```
+
+- id: `integer`
+
+**Returns**
+
+- ping: `integer`
+  - Round trip in milliseconds.
+
+## GetPlayerIdentifiers
+
+```lua
+GetPlayerIdentifiers(id)
+```
+
+- id: `integer`
+
+**Returns**
+
+- identifiers: `string[]`
+
+| Identifier | Where it comes from |
+| --- | --- |
+| `account:<id>` | The player's KCD Co-op account, first in the list. Only present when the server requires accounts, and set by the panel, so it can be trusted. |
+| `license:<40 hex>` | A key stored on the player's PC. |
+| `hwid:1:<40 hex>` | The player's hardware. |
+| `steam:<steamid64>` | Steam. The panel checks it against Steam when a Steam Web API key is set. |
+| `discord:<id>` | Discord, when it is running. |
+| `ip:<address>` | Always last. |
+
+Apart from `account:` (and `steam:` when the panel checks it), these are claims made by the player's game. Use `account:` to recognise players when your server requires accounts.
+
+```lua
+local function accountOf(id)
+    for _, identifier in ipairs(GetPlayerIdentifiers(id) or {}) do
+        if identifier:sub(1, 8) == 'account:' then
+            return identifier
+        end
+    end
+end
+```
+
+## DropPlayer
+
+Removes a player from the server.
+
+```lua
+DropPlayer(id, reason?)
+```
+
+- id: `integer`
+- reason?: `string`
+  - Shown to the player. At most 200 bytes. Default `'Dropped by the server'`.
+
+The player is disconnected a moment later and [`playerDropped`](/docs/server/events#playerdropped) fires with reason `dropped`. Until then they are still in `GetPlayers()`.
+
+## SpawnPlayer
+
+Moves, revives and dresses a player.
+
+```lua
+SpawnPlayer(id, options?)
+```
+
+- id: `integer`
+- options?: `table`
+
+<TypeTable
+  type={{
+    x: { type: 'number', description: 'World position. Used only when x, y and z are all numbers; otherwise the player stays where they are.' },
+    y: { type: 'number' },
+    z: { type: 'number' },
+    heading: { type: 'number', description: 'Degrees the player faces. Ignored without a position.', default: '0' },
+    outfit: { type: 'string', description: "A clothing preset GUID from the game's Libs/Tables/item/clothing_preset.xml. Empty keeps the current clothes.", default: "''" },
+    clearInventory: { type: 'boolean', description: 'Removes every item the player carries.', default: 'false' },
+    revive: { type: 'boolean', description: 'Revives and heals the player. A dead player is always revived.', default: 'true' },
+  }}
+/>
+
+**Returns**
+
+- sent: `boolean`
+  - `false` when the player is not online.
+
+After a spawn the player counts as alive again, so a new [`playerDied`](/docs/server/events#built-in-events) can fire.
+
+```lua
+AddEventHandler('playerJoined', function(id)
+    SpawnPlayer(id, { x = 2580.2, y = 1310.7, z = 34.1, heading = 90, clearInventory = true })
+end)
+```
+
+<Callout type="info" title="If nobody spawns a player">
+  When no resource spawns a player within **10 seconds** of joining, the server spawns them where the map puts them, with an empty inventory, and logs a hint to add the `spawnmanager` resource.
+</Callout>

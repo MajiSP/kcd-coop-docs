@@ -1,0 +1,63 @@
+---
+title: Timers and threads
+description: Run code later, or in a loop that waits between steps.
+---
+
+Client timers and threads are checked once per game frame and are removed when their resource stops.
+
+## CreateThread
+
+```lua
+CreateThread(fn)
+```
+
+- fn: `function`
+
+The function starts **right away** and runs until its first `Wait`. An error ends the thread and is logged as `thread error`. There is no handle to stop a thread from outside; end its loop yourself.
+
+<Callout type="warn" title="Lua 5.1">
+  A thread cannot `Wait` inside a `pcall` (Lua 5.1 cannot pause across it). Wrap the work, not the `Wait`.
+</Callout>
+
+```lua
+CreateThread(function()
+    while true do
+        local pos = player:GetWorldPos()
+        print(string.format('%.1f %.1f', pos.x, pos.y))
+        Wait(5000)
+    end
+end)
+```
+
+## Wait
+
+Pauses the current thread.
+
+```lua
+Wait(ms?)
+```
+
+- ms?: `number`
+  - Default `0`, the next frame.
+
+Only works inside a `CreateThread` function. Event handlers, timers and UI callbacks are not threads.
+
+## SetTimeout
+
+Runs a function once, later.
+
+```lua
+SetTimeout(ms, callback)
+```
+
+- ms: `number`
+  - `0` runs it on the next frame.
+- callback: `function`
+
+There is **no `ClearTimeout` on the client**: keep a flag if you may need to skip it.
+
+```lua
+SetTimeout(1500, function()
+    SendNUIMessage({ type = 'hint', text = 'Press T to chat' })
+end)
+```

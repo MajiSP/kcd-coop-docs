@@ -1,0 +1,79 @@
+---
+title: Timers and threads
+description: Run code later, or in a loop that waits between steps.
+---
+
+Timers and threads run on the server's single thread, checked about every 10 ms. They are all discarded when the resource stops.
+
+## SetTimeout
+
+Runs a function once, later.
+
+```lua
+SetTimeout(ms, callback)
+```
+
+- ms: `integer`
+  - Milliseconds. Must be a whole number: `1.5` raises an error. `0` runs it on the next tick, never immediately.
+- callback: `function`
+
+**Returns**
+
+- timerId: `integer`
+
+The callback is not a thread, so `Wait` cannot be used inside it.
+
+```lua
+local id = SetTimeout(30 * 1000, function()
+    SendChatMessage(-1, 'Server', 'Thirty seconds have passed.')
+end)
+```
+
+## ClearTimeout
+
+Cancels a timer of this resource that has not run yet.
+
+```lua
+ClearTimeout(timerId)
+```
+
+- timerId: `integer`
+
+## CreateThread
+
+Starts a function that can pause with `Wait`.
+
+```lua
+CreateThread(fn)
+```
+
+- fn: `function`
+
+The function starts **right away** and runs until its first `Wait`. An error ends the thread and is logged as `thread error`.
+
+## Wait
+
+Pauses the current thread.
+
+```lua
+Wait(ms?)
+```
+
+- ms?: `integer`
+  - Default `0`, the next tick.
+
+`Wait` only works directly inside a `CreateThread` function. Anywhere else (the main chunk, event handlers, timers, commands) it raises `Wait can only be used inside CreateThread`.
+
+```lua
+CreateThread(function()
+    while true do
+        for _, id in ipairs(GetPlayers()) do
+            local x, y, z = GetPlayerPosition(id)
+            if z and z < 0 then
+                DropPlayer(id, 'Out of the world')
+            end
+        end
+        Wait(5000)
+    end
+end)
+```

@@ -1,0 +1,28 @@
+---
+title: spawnmanager
+description: Spawns players when they join and brings them back after they die.
+---
+
+A server-only resource built on [`SpawnPlayer`](/docs/server/players#spawnplayer).
+
+```lua title="resources/spawnmanager/config.lua"
+Config.spawnPoints = {
+    -- { x = 0.0, y = 0.0, z = 0.0, heading = 0.0 },
+}
+Config.outfit = 'ecf4eea7-ffe5-4a98-a351-8947eeabe5bd'
+Config.clearInventory = true
+Config.respawnSeconds = 10
+```
+
+| Option | Default | What it does |
+| --- | --- | --- |
+| `spawnPoints` | `{}` | Where players join and come back after dying, `{ x, y, z, heading }`, used in turn. Empty: players appear where the map puts them. |
+| `outfit` | a starter outfit | A clothing preset GUID from the game's `Libs/Tables/item/clothing_preset.xml`, put on at every spawn. `''` keeps what the player wears. |
+| `clearInventory` | `true` | Join with an empty inventory. Never applied on respawn. |
+| `respawnSeconds` | `10` | Seconds before a player who died is brought back. Use a value that gives whole milliseconds (`10`, `2.5`). |
+
+<Callout type="info" title="Finding a spawn point">
+  Stand on the spot in game and run `players` in the Live Console. Its output includes your position (`x`, `y`, `z`) and facing (`yaw`).
+</Callout>
+
+Without any resource that spawns players, the server spawns them itself 10 seconds after they join, where the map puts them, and logs a hint to add `spawnmanager`.

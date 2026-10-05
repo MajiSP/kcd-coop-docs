@@ -1,0 +1,10 @@
+{
+  "title": "UI pages",
+  "pages": [
+    "messages",
+    "callbacks",
+    "focus",
+    "example"
+  ],
+  "defaultOpen": false
+}

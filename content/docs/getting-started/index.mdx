@@ -1,0 +1,59 @@
+---
+title: Running a server
+description: Start the server, open the panel and let players connect.
+---
+
+<Steps>
+<Step>
+
+### Download the server
+
+Get the latest **KCDCoop-server** package and unzip it anywhere, for example `C:\KCDCoop-server`. You do not need the game installed on the server PC.
+
+</Step>
+<Step>
+
+### Start the panel
+
+Run `KCDCoopServer.exe` and leave its window open. It serves the admin panel and runs the game server for you; closing the window stops both. The `bin` folder holds the programs it runs, and you never start those yourself.
+
+</Step>
+<Step>
+
+### Open the panel and sign in
+
+Open `http://localhost:40140` in a browser on the same PC. On the first run the panel window prints a **setup PIN**: enter it and sign in with your KCD Co-op account to become the master admin. Admins on other PCs open `http://<your IP>:40140`.
+
+</Step>
+<Step>
+
+### Forward the ports
+
+| Port | Protocol | Used for |
+| --- | --- | --- |
+| `30140` | UDP + TCP | The game (UDP), and the public server info that the server browser reads (TCP: `info.json`, `players.json`, `dynamic.json`, `logo.png`, `banner.png`). |
+| `40140` | TCP | The admin panel. |
+
+Forward both on your router to this PC. Windows Firewall asks the first time each program runs. Leave `40140` closed if only people on this PC or network should reach the panel.
+
+KCD Co-op uses its own ports, so it can run next to a FiveM server (`30120` / `40120`) without clashing. Both ports can be changed in **Settings > General** (panel) and **Settings > Server** (game).
+
+</Step>
+<Step>
+
+### Let players join
+
+Players install the **KCD Co-op launcher**, sign in, and either pick your server in the server browser (see [Server listing](/docs/getting-started/panel#server-listing)) or type your connect address, for example `203.0.113.5:30140`.
+
+</Step>
+</Steps>
+
+## The world
+
+**Panel > Settings > World** picks the map: one server is one world. Players load it empty: no story, no NPCs, no animals, and no skipping time (the wait menu and sleeping are off, because the server owns the clock).
+
+Everything else is decided by the resources in the `resources` folder next to `KCDCoopServer.exe`. The ones every server ships with are described in [Default resources](/docs/default-resources), and you can change their `config.lua` files or write your own: see [Resources](/docs/resources).
+
+## Updating
+
+The panel checks KCD Co-op Central for new server builds every few hours and shows a banner when one is out. Install it from the banner, or turn on **Settings > Server > Updates** to install updates automatically when nobody is online. Players' launchers fetch the matching game build by themselves.

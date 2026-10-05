@@ -1,0 +1,84 @@
+---
+title: The panel
+description: What each page of the admin panel does.
+---
+
+The panel is the web page served by `KCDCoopServer.exe` on port `40140`. Admins sign in with their KCD Co-op account; what each admin may do is set on the **Admins** page.
+
+<Callout title="First run">
+  On the very first start, the panel window prints a **setup PIN**. Open the panel, enter the PIN and sign in with your KCD Co-op account: you become the master admin. Add other admins on the **Admins** page afterwards.
+</Callout>
+
+## Pages
+
+| Page | What it is for |
+| --- | --- |
+| **Dashboard** | Server stats, players over the last 24 hours, why players dropped, recent activity and chat. |
+| **Players** | Everyone online: open a player to see their identifiers and history, and warn, message, kick or ban them. |
+| **Bans** | Every ban with its reason and length; lift bans here. |
+| **Live Console** | The game server's console. Type [console commands](#console-commands) and server commands here. |
+| **Server Log** | Joins, leaves, deaths, chat and admin actions. |
+| **History** | Past actions against players: warnings, kicks, bans and direct messages. |
+| **Admins** | Who can sign in to the panel and what they may do. |
+| **Allowlist** | Limit who may join: by account, or by Discord role. |
+| **Settings** | General, Server, World, accounts, Discord, server listing and the loading screen. |
+| **System** | Overview of the host and build, environment, memory, logger and Discord status. |
+
+## Console commands
+
+Type these in the **Live Console** (`help` lists them):
+
+| Command | What it does |
+| --- | --- |
+| `players` | Lists everyone online with their ID. |
+| `say <text>` | Sends a chat message from the server to everyone. |
+| `warn <id> <reason>` | Shows a warning to a player. |
+| `dm <id> <text>` | Sends a player a direct message from the admins. |
+| `kick <id> <reason>` | Kicks a player. |
+| `kickall <reason>` | Kicks everyone. |
+| `ban <id> <seconds or 0> <reason>` | Bans a player; `0` bans for good. |
+| `banids <seconds or 0> <name> <id,id,...> <reason>` | Bans a list of identifiers, for someone who is not online. |
+| `unban <code or identifier>` | Lifts a ban. |
+| `bans` | Lists the bans. |
+| `admit <token>` / `deny <token> <reason>` | Lets in or refuses a join that is waiting for approval. |
+| `time <HH:MM>` | Sets the world time. |
+| `timeratio <game seconds per second>` | Sets how fast the world clock runs. |
+| `weather <preset or auto>` | Forces a weather preset, or gives control back to the game. |
+| `resources` | Lists every resource and whether it is running, stopped or failed. |
+| `start <name>` | Starts a resource and its dependencies, if it is not running (looks for new resource folders first). |
+| `stop <name>` | Stops a resource. |
+| `restart <name>` / `ensure <name>` | Stops a resource if it runs, then starts it again with its new files, which are sent to everyone online. |
+| `refresh` | Looks for new resource folders (it does not start them). |
+| `stop` (alone) or `quit` | Stops the game server. |
+
+Any command a resource registers with `RegisterCommand` can be typed in the console too; it then runs with `source` set to `0`.
+
+## Settings
+
+### General
+
+**Server Name**, the **Connect Address** players type in the launcher, and the **Panel Address** (`0.0.0.0:40140` lets admins on other PCs reach it, `127.0.0.1:40140` keeps it on this PC). HTTPS is available when you have a domain.
+
+### Server
+
+The **Game Port**, a daily **Restart Schedule** (players get chat warnings before each restart), **Autostart**, **Updates** and **Crash Recovery** (restart the game server when it crashes).
+
+### Accounts and allowlist
+
+**Require Accounts** makes players sign in to a KCD Co-op account in the launcher; their account ID then becomes their main identifier in your scripts (`account:<id>`). The allowlist can let in only chosen accounts, or only members of your Discord server with certain roles. Admins are always let in.
+
+### Discord
+
+A Discord bot can post server starts, stops, crashes and announcements, and keep a live status embed. The Discord application ID shows your server in players' Discord status.
+
+### World
+
+The map the server runs. Everything else about the world is decided by resources.
+
+### Server listing
+
+**List my server** shows the server in the launcher's server browser, with a description, tags, language, Discord invite, website, max players, a logo and a banner. Central checks it can reach your info port before listing you.
+
+### Loading screen
+
+Upload your own loading screen: a slideshow of up to 12 images or a looping video, shown while players load in. You can also supply your own `index.html` with its images, CSS, JS, fonts and music.

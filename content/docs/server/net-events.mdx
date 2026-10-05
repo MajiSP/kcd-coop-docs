@@ -1,0 +1,76 @@
+---
+title: Net events
+description: Events between the server and players' games.
+---
+
+## RegisterNetEvent
+
+Lets players trigger an event in this resource.
+
+```lua
+RegisterNetEvent(name, handler?)
+```
+
+- name: `string`
+- handler?: `function(...)`
+  - Added with `AddEventHandler` when given.
+
+An event a resource has not registered is ignored when a player sends it. Once registered, **all** of this resource's handlers for that name run for players (also those added with `AddEventHandler`), with [`source`](#source) set to the sender.
+
+```lua
+RegisterNetEvent('bank:deposit', function(amount)
+    local src = source
+    if type(amount) ~= 'number' or amount <= 0 or amount > 10000 then
+        return
+    end
+    print(GetPlayerName(src) .. ' deposits ' .. math.floor(amount))
+end)
+```
+
+<Callout type="error" title="Never trust what a player sends">
+  Check the type and range of every argument, and check the player may do what they ask. Never register built-in names such as `playerJoined`: players could then fake them.
+</Callout>
+
+**Limits**
+
+- Arguments arrive as a JSON array, at most **16 KB**. If the payload is too large or is not valid, handlers still run, **with no arguments**.
+- Each player may send **120 events in a burst, refilled at 60 a second**, across all event names. Events beyond that are dropped silently.
+- Events from players who have not finished joining are dropped.
+
+## TriggerClientEvent
+
+Sends an event to one player or to everyone.
+
+```lua
+TriggerClientEvent(name, target, ...)
+```
+
+- name: `string`
+  - At most 64 bytes. Do not use tabs or newlines.
+- target: `integer`
+  - A player ID, or `-1` for everyone.
+- ...: `any`
+  - Sent as JSON (see [values](/docs/server#values-passed-between-resources)).
+
+The arguments may be at most **16 KB** as JSON; larger raises a Lua error and nothing is sent. An unknown player ID is ignored. Players receive it in handlers they registered with the client's [`RegisterNetEvent`](/docs/client/events#registernetevent).
+
+```lua
+TriggerClientEvent('chat:addMessage', -1, { kind = 'notice', text = 'The market opens at dawn.' })
+TriggerClientEvent('hud:update', playerId, { cash = 120, hunger = 0.4 })
+```
+
+## source
+
+A global that holds the sending player's ID while this resource's handlers run for an event a **player** sent. It is set back to `nil` afterwards.
+
+- It is not set for server events, built-in events or commands (commands get the caller as their first argument).
+- Anything that runs later, such as a `SetTimeout` callback or the rest of a thread after `Wait`, sees `nil` or another event's value. **Copy it into a local first.**
+
+```lua
+RegisterNetEvent('shop:buy', function(item)
+    local src = source
+    SetTimeout(500, function()
+        SendChatMessage(src, 'Shop', 'You bought ' .. tostring(item))
+    end)
+end)
+```

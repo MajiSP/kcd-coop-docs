@@ -1,0 +1,16 @@
+{
+  "title": "Server scripting",
+  "pages": [
+    "events",
+    "net-events",
+    "players",
+    "commands",
+    "chat",
+    "world",
+    "appearance",
+    "kvp",
+    "timers",
+    "files"
+  ],
+  "defaultOpen": false
+}

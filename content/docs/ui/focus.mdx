@@ -1,0 +1,42 @@
+---
+title: Focus
+description: Give a page the keyboard and mouse, and give them back to the game.
+---
+
+## SetNuiFocus
+
+```lua
+SetNuiFocus(hasFocus, hasCursor)
+```
+
+- hasFocus: `boolean`
+  - `true` gives this resource's page the keyboard. `false` gives it back to the game.
+- hasCursor: `boolean`
+  - With focus, also show the mouse cursor and send the mouse to the page. `false` is keyboard only.
+
+```lua
+SendNUIMessage({ type = 'open' })
+SetNuiFocus(true, true)    -- a menu: mouse and keyboard
+
+-- later
+SetNuiFocus(false, false)  -- back to the game
+```
+
+## While a page has focus
+
+**The game gets no input**: no movement, no camera, no attacks, and [key mappings](/docs/client/commands#registerkeymapping) do not fire. Key releases still reach the game, so nobody ends up with a stuck key.
+
+**The page gets:**
+
+- **Every key**, except `Alt+F4` and `Alt+Tab`, which go to Windows. `Esc` goes to your page, not to the game's menu.
+- **The mouse**, only with `hasCursor = true`: the cursor appears in the middle of the screen, and moves, clicks, double-clicks and the wheel reach the page. With `hasCursor = false` the mouse does nothing at all, which suits a chat box.
+
+<Callout type="error" title="Always offer a way out">
+  While your page has focus, the player cannot reach the game, its menu or your key mapping. Release focus on `Esc`, on a close button and after a submit, or the player is stuck.
+</Callout>
+
+## Several pages at once
+
+Each resource has its own focus. The game counts as focused while any resource holds it, and the cursor shows if any of them asked for it. If two resources hold focus at the same time, the one whose name sorts last alphabetically gets the keyboard and mouse. Stopping a resource releases its focus.
+
+A page without focus is still drawn, but gets no input. That is how a HUD works.

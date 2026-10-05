@@ -1,0 +1,99 @@
+---
+title: Events
+description: Local events, events to and from the server, and the events the client fires itself.
+---
+
+## AddEventHandler
+
+```lua
+AddEventHandler(name, handler)
+```
+
+- name: `string`
+- handler: `function(...)`
+
+The handler receives local events from any resource. It receives events from the **server** only if this resource also called [`RegisterNetEvent`](#registernetevent) for that name. Handlers are not threads, so `Wait` cannot be used in them; start a [`CreateThread`](/docs/client/timers#createthread) instead. There is no `RemoveEventHandler`.
+
+```lua
+AddEventHandler('onClientResourceStart', function(name)
+    if name == GetCurrentResourceName() then
+        print('ready')
+    end
+end)
+```
+
+## RegisterNetEvent
+
+Allows the server to trigger an event in this resource.
+
+```lua
+RegisterNetEvent(name, handler?)
+```
+
+- name: `string`
+- handler?: `function(...)`
+  - Added with `AddEventHandler` when given.
+
+A server event reaches only the resources that registered it. If none did, the client log says `no client script handles the server event <name>`.
+
+```lua
+RegisterNetEvent('shop:opened', function(items, gold)
+    print(#items .. ' items, ' .. gold .. ' groschen')
+end)
+```
+
+Arguments arrive decoded from JSON: `null` becomes `nil` (later arguments keep their place), and numbers are game numbers ([32-bit floats](/docs/client#the-games-lua-51)).
+
+## TriggerEvent
+
+Runs the handlers of a **local** event in every resource on this PC, right away. It never leaves the player's game.
+
+```lua
+TriggerEvent(name, ...)
+```
+
+- name: `string`
+- ...: `any`
+  - Passed as they are: tables by reference, functions and `nil` included.
+
+```lua
+TriggerEvent('chat:addMessage', { kind = 'system', text = 'Saved.' })
+```
+
+## TriggerServerEvent
+
+Sends an event to the server.
+
+```lua
+TriggerServerEvent(name, ...)
+```
+
+- name: `string`
+  - At most 64 bytes.
+- ...: `any`
+  - Sent as one JSON array.
+
+The server runs it only in resources that registered it with the server's [`RegisterNetEvent`](/docs/server/net-events#registernetevent), with `source` set to this player.
+
+<Callout type="warn" title="What breaks a server event">
+  - **A `nil` between arguments.** `TriggerServerEvent('x', a, nil, c)` is not a list any more, and the server handler runs with no arguments. A `nil` at the end is fine.
+  - **More than 16 KB** of JSON: the server handler runs with no arguments.
+  - **Too many events.** The server accepts 120 in a burst, refilled at 60 a second, and the client queues at most 256 unsent. Extra events are dropped silently.
+</Callout>
+
+Functions, userdata and `NaN` become `null`. An empty table is sent as `[]`, and numeric keys of non-list tables become strings.
+
+```lua
+TriggerServerEvent('appearance:save', { body = 'm_body_tan_02', head = 'm_head_046', hair = 'm_hair_009_black', beard = 'm_beard_17' })
+```
+
+## Built-in events
+
+| Event | Arguments | When |
+| --- | --- | --- |
+| `onClientResourceStart` | `name` | All files of resource `name` have run. Fires in every resource, but is not repeated for resources that started before yours. |
+| `onClientResourceStop` | `name` | Resource `name` is about to stop or restart. It still fires in the stopping resource. |
+| `playerAppearanceChanged` | `id`, `look` | The server sent a look for player `id`: yourself, a player who came into range, or a cleared look (`look` is `nil`). |
+| `chat:addMessage` | `message` | The platform's own messages (joins, leaves, chat lines, admin messages), but only when a resource handles `chat:addMessage`. See [Chat](/docs/default-resources/chat). |
+
+All four are local events. There are no client events for spawning, dying, or other players joining and leaving; those reach players as chat messages.

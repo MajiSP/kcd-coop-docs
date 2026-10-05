@@ -1,0 +1,67 @@
+---
+title: appearance
+description: The character screen on first join and with /appearance, saved per account.
+---
+
+New players get a random look when they first join, and the character screen opens so they can make their own. Players change it later with `/appearance`. Looks are saved per account.
+
+```lua title="resources/appearance/config.lua"
+Config.openOnFirstJoin = true
+Config.allowChange = true
+```
+
+| Option | Default | What it does |
+| --- | --- | --- |
+| `openOnFirstJoin` | `true` | Open the character screen until the player saves a look. |
+| `allowChange` | `true` | Allow `/appearance`. |
+
+## For players
+
+The character screen is a sidebar with Skin, Face, Beard, Hairstyle and Hair colour. A preview character stands in front of you, wearing your clothes.
+
+| Key | Does |
+| --- | --- |
+| `W` / `S` or hover | Choose a row |
+| `A` / `D`, the arrows or the wheel on a row | Change it |
+| `Q` / `E` or drag beside the sidebar | Turn the character |
+| `Z` / `X` or the wheel beside the sidebar | Zoom |
+| `R` | Randomize |
+| `Space` | Save (Enter the world on first join) |
+| `Esc` | Close (not on first join) |
+
+## How looks are stored
+
+- In the resource's [KVP](/docs/server/kvp) as `look:<identifier>`, using the player's `account:` identifier, else their `license:`, else their name.
+- The value is `{ body, head, hair, beard, chosen }`. `chosen = false` marks a random look the player has not confirmed yet.
+- Every saved look is checked against `parts.lua` on the server. A look with a part that is no longer offered is replaced with a random one.
+
+## The parts
+
+`parts.lua` sets a shared global `Parts`:
+
+```lua
+Parts = {
+    head = { 'm_head_000', ... },
+    beard = { 'm_beard_00', ... },
+    body = { 'm_body_pale_01', ... },
+    hair = {
+        { style = 'x_hair_01', colours = { 'm_hair_001_black', 'm_hair_001_dark_brown', ... } },
+    },
+}
+```
+
+It is generated from the game's data and lists every face, beard, skin and hairstyle (with its colours) that suits a man's body. Remove entries to stop offering them.
+
+## Events
+
+| Event | Direction | Arguments |
+| --- | --- | --- |
+| `appearance:open` | server → client | `{ first: boolean }` |
+| `appearance:ready` | client → server | none, sent when the resource starts on the client |
+| `appearance:save` | client → server | `look`, checked against `Parts` before it is stored |
+
+To open the screen for a player from your own server script:
+
+```lua
+TriggerClientEvent('appearance:open', playerId, { first = false })
+```

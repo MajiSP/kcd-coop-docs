@@ -1,0 +1,116 @@
+---
+title: Commands and keys
+description: Client commands, key bindings and sending chat lines.
+---
+
+## RegisterCommand
+
+Adds a command that runs in the player's game.
+
+```lua
+RegisterCommand(name, handler, help?)
+```
+
+- name: `string`
+  - Lower-cased.
+- handler: `function(args, raw)`
+  - args: `string[]`
+    - The words after the command name.
+  - raw: `string`
+    - The whole line without the leading `/`.
+- help?: `string`
+  - Shown in the chat's suggestions. Commands without help are not suggested.
+
+<Callout type="info" title="No source on the client">
+  Unlike server commands, client handlers get `(args, raw)`: the player running it is always the local player.
+</Callout>
+
+Client commands are shared by all resources (a name that exists is replaced) and are removed when their resource stops. They run through [`ExecuteCommand`](#executecommand) or a [key mapping](#registerkeymapping); the chat resource calls `ExecuteCommand` for lines that start with `/`.
+
+```lua
+RegisterCommand('coords', function(args, raw)
+    local pos = player:GetWorldPos()
+    TriggerEvent('chat:addMessage', { kind = 'system', text = string.format('%.2f, %.2f, %.2f', pos.x, pos.y, pos.z) })
+end, 'Show your position')
+```
+
+## ExecuteCommand
+
+Runs a command line as if the player typed it.
+
+```lua
+ExecuteCommand(line)
+```
+
+- line: `string`
+  - One leading `/` is optional.
+
+If a client command has that name it runs. **Otherwise the line is sent to the server** as `/line`, where the server command runs, or the player is told `Unknown command /name`.
+
+```lua
+ExecuteCommand('clear')
+ExecuteCommand('/msg 2 hi')
+```
+
+## GetRegisteredCommands
+
+```lua
+GetRegisteredCommands()
+```
+
+**Returns**
+
+- commands: `{ name: string, help?: string }[]`
+  - Every resource's **client** commands, sorted by name. Server commands are not included.
+
+## RegisterKeyMapping
+
+Runs a command when the player presses a key.
+
+```lua
+RegisterKeyMapping(command, description, key)
+```
+
+- command: `string`
+  - Run through `ExecuteCommand`, so it may be a client or a server command, with arguments.
+- description: `string`
+- key: `string`
+  - Case-insensitive. See the list below.
+
+The command runs once per **press**: holding the key does not repeat it, and there are no release callbacks. Key mappings do not fire while a UI page has [focus](/docs/ui/focus) or while the game window is in the background. Registering twice runs the command twice, and mappings are removed when the resource stops.
+
+**Keys**
+
+- Letters `A` to `Z` and digits `0` to `9`
+- `F1` to `F12`
+- `BACKSPACE`, `TAB`, `RETURN` (or `ENTER`), `SHIFT`, `CONTROL` (or `CTRL`), `ALT`, `PAUSE`, `CAPSLOCK`, `ESCAPE`, `SPACE`
+- `PAGEUP`, `PAGEDOWN`, `END`, `HOME`, `LEFT`, `UP`, `RIGHT`, `DOWN`, `INSERT`, `DELETE`
+- `NUMPAD0` to `NUMPAD9`, `MULTIPLY`, `ADD`, `SUBTRACT`, `DECIMAL`, `DIVIDE`
+- `SEMICOLON`, `EQUALS`, `COMMA`, `MINUS`, `PERIOD`, `SLASH`, `GRAVE`, `LBRACKET`, `BACKSLASH`, `RBRACKET`, `APOSTROPHE`
+
+An unknown key is logged as `RegisterKeyMapping: unknown key <key>` and nothing is registered. Players cannot rebind keys yet, so choose keys the game does not use.
+
+```lua
+RegisterCommand('board', function()
+    SendNUIMessage({ type = 'open' })
+    SetNuiFocus(true, true)
+end)
+RegisterKeyMapping('board', 'Open the notice board', 'F6')
+```
+
+## SendChat
+
+Sends a chat line from the player.
+
+```lua
+SendChat(text)
+```
+
+- text: `string`
+  - At most 160 characters, control characters removed. An empty string sends nothing.
+
+On the server a line starting with `/` runs the **server** command (never a client command). Any other line fires the server's [`chatMessage`](/docs/server/events#chatmessage) event and, unless a script cancels it, is shown to everyone.
+
+```lua
+SendChat('Well met, travellers!')
+```

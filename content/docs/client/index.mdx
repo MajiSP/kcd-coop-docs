@@ -1,0 +1,75 @@
+---
+title: Client scripting
+description: Lua that runs inside each player's game, and the rules it follows.
+---
+
+Client scripts are the `shared_script` and `client_script` files of a [resource](/docs/resources). Every player downloads them when they join (or when the resource starts) and they run inside Kingdom Come: Deliverance II.
+
+## The game's Lua 5.1
+
+Client scripts run in the game's own CryEngine Lua, which is **Lua 5.1**. These do **not** exist:
+
+- `//` integer division: use `math.floor(a / b)`.
+- Bitwise operators (`&`, `|`, `~`, `<<`, `>>`) and `bit32`: use `math.fmod(math.floor(flags / 4), 2) == 1` style arithmetic.
+- `goto`, `utf8`, `_ENV`, `math.tointeger`, `math.type`.
+- `table.unpack`: use `unpack(t, 1, n)`.
+
+<Callout type="warn" title="Numbers are 32-bit floats">
+  The game stores numbers as 32-bit floats, good for about 7 digits. Whole numbers above 16,777,216 are no longer exact, so large IDs (Discord IDs, millisecond timestamps) must travel as **strings**.
+</Callout>
+
+A `shared_script` runs on both sides, so it must follow these rules too.
+
+## What a script can reach
+
+Each resource gets its own globals table, which falls back to the game's globals:
+
+- Assigning a global (`Foo = 1`) only affects your resource. All files of one resource share their globals, so `Config` from `config.lua` is visible in `client.lua`.
+- **Every game global** is readable: `System`, `Game`, `player`, `Calendar`, `ItemManager`, `EnvironmentModule` and the rest of the game's Lua API.
+- There is no `require`, `exports`, `json`, `Citizen` or `source`, and nothing is saved on the player's PC. Keep anything that must last on the server with [KVP](/docs/server/kvp).
+
+This separates resources from each other but is **not** a security sandbox. Platform tables you may notice (`Coop`, `CoopRuntime`, `CoopClient`) are internal and can change at any time.
+
+## When scripts run
+
+1. Players receive every running resource that has client scripts or a UI page when they join, and again when it restarts.
+2. A resource's Lua starts once the player is in the world and the platform has cleared it (a few seconds after loading in).
+3. Its files run in order. An error in one file is logged and the remaining files still run.
+4. `onClientResourceStart(name)` fires in every resource, including the one that just started.
+
+All client Lua runs on the game's main thread, once per frame. When a resource stops, `onClientResourceStop(name)` fires and its handlers, threads, timers, commands, key mappings and UI page are removed. Entities it spawned and game settings it changed are **not** undone; clean those up in `onClientResourceStop`.
+
+## Logging
+
+`print(...)` writes `[<resource>] text` to `kcdcoop.log` in the game's folder. Errors from your scripts land there too, as `[<resource>] script error: ...`.
+
+## GetCurrentResourceName
+
+```lua
+GetCurrentResourceName()
+```
+
+**Returns**
+
+- name: `string`
+
+## GetPlayerServerId
+
+Your own player ID on the server: the value the server sees as `source`.
+
+```lua
+GetPlayerServerId()
+```
+
+**Returns**
+
+- id?: `number`
+  - `nil` until the server has welcomed the player.
+
+<Cards>
+  <Card title="Events" href="/docs/client/events" description="Local events, events to and from the server, and the built-in events." />
+  <Card title="Commands and keys" href="/docs/client/commands" description="Client commands, key bindings and sending chat." />
+  <Card title="Timers and threads" href="/docs/client/timers" description="CreateThread, Wait and SetTimeout." />
+  <Card title="Appearance" href="/docs/client/appearance" description="Looks and the appearance preview character." />
+  <Card title="UI pages" href="/docs/ui" description="HTML pages in game: messages, callbacks and focus." />
+</Cards>

@@ -1,0 +1,87 @@
+---
+title: World
+description: The world clock, how fast it runs, and the weather.
+---
+
+The server owns one clock that every player follows. It starts at 07:30 and runs at the game's own speed: 15 game seconds per real second, which is a 96-minute day. The [worldmanager](/docs/default-resources/worldmanager) resource sets these from its config.
+
+Players' games follow the server's clock. They only move their own clock when it is more than **5 game minutes** off, so very small corrections are not applied.
+
+## SetWorldTime
+
+```lua
+SetWorldTime(hour, minute?)
+```
+
+- hour: `number`
+- minute?: `number`
+  - Default `0`.
+
+Fractions are allowed, and values wrap around: `25` is 01:00 and `-1` is 23:00.
+
+## GetWorldTime
+
+```lua
+GetWorldTime()
+```
+
+**Returns**
+
+- hour: `integer`
+  - `0` to `23`.
+- minute: `integer`
+  - `0` to `59`.
+
+## SetTimeScale
+
+Sets how fast the clock runs.
+
+```lua
+SetTimeScale(ratio)
+```
+
+- ratio: `number`
+  - Game seconds per real second, from `0` to `1000`. `0` stops the clock. `1440 / dayMinutes` gives a day that lasts `dayMinutes` real minutes.
+
+## GetTimeScale
+
+```lua
+GetTimeScale()
+```
+
+**Returns**
+
+- ratio: `number`
+
+## SetWeather
+
+```lua
+SetWeather(preset?)
+```
+
+- preset?: `string`
+  - A weather preset name. `nil` or `''` gives control back to the game's own changing weather.
+
+The name is not checked on the server. The [worldmanager](/docs/default-resources/worldmanager) config lists these presets:
+
+`cloudless_sunny`, `semicloudy_clear`, `cloudy_no_rain`, `summer_overcast`, `cloudy_frequent_showers`, `foggy_drizzly`, `foggy_storm_no_rain`, `foggy_storm`
+
+## GetWeather
+
+```lua
+GetWeather()
+```
+
+**Returns**
+
+- preset?: `string`
+  - Nothing while the game's own weather is active.
+
+```lua
+SetWorldTime(21, 30)
+SetTimeScale(1440 / 120)
+SetWeather('foggy_drizzly')
+
+local hour, minute = GetWorldTime()
+print(('%02d:%02d, ratio %.1f, weather %s'):format(hour, minute, GetTimeScale(), GetWeather() or 'game'))
+```

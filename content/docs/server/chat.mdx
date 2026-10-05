@@ -1,0 +1,31 @@
+---
+title: Chat
+description: Sending chat lines from the server.
+---
+
+## SendChatMessage
+
+```lua
+SendChatMessage(target, author, text)
+```
+
+- target: `integer`
+  - A player ID, or `-1` for everyone.
+- author: `string`
+  - At most 48 bytes. Do not use tabs or newlines.
+- text: `string`
+  - At most 160 bytes, control characters removed.
+
+In players' games it reaches the chat resource as a `chat:addMessage` with `kind = 'server'`. Without a chat resource it shows as a game notification `author: text`.
+
+```lua
+SendChatMessage(-1, 'Town crier', 'Hear ye! The tournament starts at noon.')
+```
+
+For richer messages (colours, kinds, private messages) send the chat resource's event yourself:
+
+```lua
+TriggerClientEvent('chat:addMessage', playerId, { kind = 'notice', author = 'Bailiff', text = 'Your rent is due.' })
+```
+
+See [Chat](/docs/default-resources/chat) for every message field.

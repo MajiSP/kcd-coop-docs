@@ -1,0 +1,116 @@
+---
+title: Example
+description: A complete resource with a page, a command, a key and a server event.
+---
+
+A notice board: `/board` or `F6` opens it, the server sends the notes, and `Esc` closes it.
+
+<Files>
+  <Folder name="noticeboard" defaultOpen>
+    <File name="resource.lua" />
+    <File name="server.lua" />
+    <File name="client.lua" />
+    <Folder name="html" defaultOpen>
+      <File name="index.html" />
+    </Folder>
+  </Folder>
+</Files>
+
+```lua title="resource.lua"
+description 'Notice board'
+version '1.0.0'
+
+server_script 'server.lua'
+client_script 'client.lua'
+
+ui_page 'html/index.html'
+files { 'html/index.html' }
+```
+
+```lua title="server.lua"
+local notes = {
+    'The miller is looking for help.',
+    'Tournament at noon on Sunday.',
+}
+
+RegisterNetEvent('board:ready', function()
+    TriggerClientEvent('board:notes', source, notes)
+end)
+```
+
+```lua title="client.lua"
+local open = false
+
+local function setOpen(state)
+    open = state
+    SetNuiFocus(state, state)
+    SendNUIMessage({ type = state and 'open' or 'close' })
+end
+
+RegisterCommand('board', function()
+    setOpen(not open)
+end, 'Read the notice board')
+RegisterKeyMapping('board', 'Notice board', 'F6')
+
+RegisterNetEvent('board:notes', function(notes)
+    SendNUIMessage({ type = 'notes', notes = notes })
+end)
+
+RegisterNUICallback('close', function(_, cb)
+    setOpen(false)
+    cb({ ok = true })
+end)
+
+AddEventHandler('onClientResourceStart', function(name)
+    if name == GetCurrentResourceName() then
+        TriggerServerEvent('board:ready')
+    end
+end)
+```
+
+```html title="html/index.html"
+<!doctype html>
+<html>
+<head>
+<meta charset="utf-8">
+<style>
+  body { margin: 0; background: transparent; font-family: Georgia, serif; }
+  #board { display: none; position: absolute; top: 20vh; left: 50%; transform: translateX(-50%);
+           width: 40vh; padding: 3vh; background: #ece2cc; color: #2e2822; }
+  #board.open { display: block; }
+</style>
+</head>
+<body>
+<div id="board"><h2>Notices</h2><ul id="notes"></ul></div>
+<script>
+function post(name, data) {
+  return fetch('https://' + GetParentResourceName() + '/' + name, {
+    method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(data || {})
+  }).catch(function () {});
+}
+window.addEventListener('message', function (e) {
+  var d = e.data || {};
+  var board = document.getElementById('board');
+  if (d.type === 'open') board.classList.add('open');
+  if (d.type === 'close') board.classList.remove('open');
+  if (d.type === 'notes') {
+    var list = document.getElementById('notes');
+    list.innerHTML = '';
+    (d.notes || []).forEach(function (n) {
+      var li = document.createElement('li');
+      li.textContent = n;
+      list.appendChild(li);
+    });
+  }
+});
+document.addEventListener('keydown', function (e) {
+  if (e.key === 'Escape') post('close');
+});
+</script>
+</body>
+</html>
+```
+
+<Callout type="info">
+  `F6` opens the board but cannot close it: key mappings do not fire while the page has focus. `Esc` and the `close` callback are the way out.
+</Callout>

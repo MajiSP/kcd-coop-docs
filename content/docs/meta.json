@@ -1,0 +1,15 @@
+{
+  "title": "KCD Co-op",
+  "pages": [
+    "index",
+    "---Server owners---",
+    "getting-started",
+    "default-resources",
+    "---Developers---",
+    "resources",
+    "server",
+    "client",
+    "ui",
+    "reference"
+  ]
+}

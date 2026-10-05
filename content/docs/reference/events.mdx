@@ -1,0 +1,38 @@
+---
+title: Built-in events
+description: Every event the platform and the default resources fire, in one place.
+---
+
+## Server
+
+| Event | Arguments | Cancel | Details |
+| --- | --- | --- | --- |
+| `playerJoined` | `id` | No | [Events](/docs/server/events#built-in-events) |
+| `playerDropped` | `id`, `reason` | No | `reason`: `dropped`, `kicked`, `banned`, `timeout` or `quit`. The player is already gone. |
+| `playerDied` | `id` | No | Once per life. |
+| `chatMessage` | `id`, `name`, `text` | **Yes** | Not fired for commands. |
+| `onResourceStart` | `name` | No | Also in the resource that started. |
+| `onResourceStop` | `name` | No | Also in the resource that stops. |
+
+## Client
+
+| Event | Arguments | Details |
+| --- | --- | --- |
+| `onClientResourceStart` | `name` | [Events](/docs/client/events#built-in-events) |
+| `onClientResourceStop` | `name` | Also on restart. |
+| `playerAppearanceChanged` | `id`, `look` | `look` is `nil` when cleared. |
+| `chat:addMessage` | `message` | Only when a resource handles it. |
+
+## Default resources
+
+| Event | Side | Arguments | Resource |
+| --- | --- | --- | --- |
+| `chat:addMessage` | client (net and local) | `message` | [chat](/docs/default-resources/chat#the-message) |
+| `chat:setSuggestions` | client (net) | `{ name, help }[]` | chat |
+| `chat:clear` | client (local only) | none | chat |
+| `chat:ready` | server (net) | none | chat |
+| `chat:addSuggestion` | server (local) | `name`, `help` | chat |
+| `chat:removeSuggestion` | server (local) | `name` | chat |
+| `appearance:open` | client (net) | `{ first }` | [appearance](/docs/default-resources/appearance#events) |
+| `appearance:ready` | server (net) | none | appearance |
+| `appearance:save` | server (net) | `look` | appearance |

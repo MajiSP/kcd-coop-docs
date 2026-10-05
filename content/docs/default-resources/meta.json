@@ -1,0 +1,10 @@
+{
+  "title": "Default resources",
+  "pages": [
+    "worldmanager",
+    "spawnmanager",
+    "chat",
+    "appearance"
+  ],
+  "defaultOpen": false
+}

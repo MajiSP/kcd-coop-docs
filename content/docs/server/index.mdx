@@ -1,0 +1,52 @@
+---
+title: Server scripting
+description: How server scripts run, what Lua they get, and the rules every function follows.
+---
+
+Server scripts are the `shared_script` and `server_script` files of a [resource](/docs/resources). They run inside the game server.
+
+## The runtime
+
+- **Lua 5.4**, one state per resource. Globals are shared between the scripts of one resource and never between resources.
+- The **full standard library**, unsandboxed: `io`, `os`, `debug` and `require` are all there. `require` resolves paths against the server folder, not the resource folder.
+- **No `json` library**, no `exports` and no `Citizen` table. Resources talk to each other with [events](/docs/server/events).
+- **One thread.** All Lua runs on the server's network thread; timers and threads are serviced about every 10 ms.
+- **Errors never stop a resource.** They are logged as `[<resource>] script error: <traceback>` and the next handler still runs.
+
+<Callout type="warn" title="Resources are trusted code">
+  Server scripts can read and write files anywhere and run programs. Only install resources you trust.
+</Callout>
+
+## Player IDs
+
+- A player gets an integer ID when they join, counting from `1`. IDs are never reused while the server runs and start again at `1` after a restart.
+- `0` is the server console (for example the `source` of a command typed in the Live Console). It is never a player.
+- Players waiting for the allowlist have no ID yet and are invisible to scripts.
+
+## Values passed between resources
+
+Event arguments, KVP values, looks and client payloads are copied, and sometimes go through JSON. The same rules apply everywhere:
+
+| Lua value | Arrives as |
+| --- | --- |
+| `boolean`, `string` | Unchanged. |
+| `number` | A whole number comes back as an integer (`2.0` arrives as `2`). |
+| `table` | A deep copy, at most 16 levels deep. |
+| `nil`, functions, userdata, coroutines | `nil` |
+
+When a table goes through JSON (client events, KVP, looks), it becomes an **array** only if its keys are exactly `1..n`. Anything else becomes an object, and numeric keys of an object come back as **strings**.
+
+## Functions
+
+<Cards>
+  <Card title="Events" href="/docs/server/events" description="AddEventHandler, TriggerEvent, CancelEvent and the built-in events." />
+  <Card title="Net events" href="/docs/server/net-events" description="RegisterNetEvent, TriggerClientEvent and the source global." />
+  <Card title="Players" href="/docs/server/players" description="GetPlayers, names, positions, identifiers, DropPlayer and SpawnPlayer." />
+  <Card title="Commands" href="/docs/server/commands" description="RegisterCommand and GetRegisteredCommands." />
+  <Card title="Chat" href="/docs/server/chat" description="SendChatMessage." />
+  <Card title="World" href="/docs/server/world" description="The world clock, its speed and the weather." />
+  <Card title="Appearance" href="/docs/server/appearance" description="SetPlayerAppearance and GetPlayerAppearance." />
+  <Card title="Saved data (KVP)" href="/docs/server/kvp" description="Key-value storage that survives restarts." />
+  <Card title="Timers and threads" href="/docs/server/timers" description="SetTimeout, ClearTimeout, CreateThread and Wait." />
+  <Card title="Files and output" href="/docs/server/files" description="GetCurrentResourceName, LoadResourceFile and print." />
+</Cards>

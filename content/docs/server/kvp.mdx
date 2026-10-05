@@ -1,0 +1,70 @@
+---
+title: Saved data (KVP)
+description: Key-value storage for a resource that survives restarts.
+---
+
+Each resource has its own store, in `kvp/<resource>.json` next to `KCDCoopServer.exe`. A resource only sees its own keys.
+
+- **Keys** are strings of 1 to 256 bytes.
+- **Values** are strings, numbers, booleans or tables, at most **64 KB** as JSON. Tables follow the [JSON rules](/docs/server#values-passed-between-resources): numeric keys of non-array tables come back as strings, and `2.0` comes back as `2`.
+- Every set or delete rewrites the file right away, safely (written to a temporary file, then swapped in). Avoid writing in a fast loop.
+- The file is read once and kept in memory while the server runs. **Editing it by hand while the server runs has no effect**, and it is overwritten on the next write.
+
+## SetResourceKvp
+
+```lua
+SetResourceKvp(key, value)
+```
+
+- key: `string`
+- value: `string | number | boolean | table | nil`
+  - `nil` deletes the key.
+
+## GetResourceKvp
+
+```lua
+GetResourceKvp(key)
+```
+
+- key: `string`
+
+**Returns**
+
+- value?: `string | number | boolean | table`
+  - Nothing when the key does not exist.
+
+## DeleteResourceKvp
+
+```lua
+DeleteResourceKvp(key)
+```
+
+- key: `string`
+
+The same as `SetResourceKvp(key, nil)`.
+
+## GetResourceKvpKeys
+
+```lua
+GetResourceKvpKeys(prefix?)
+```
+
+- prefix?: `string`
+  - Only keys that start with this. Default `''` (every key).
+
+**Returns**
+
+- keys: `string[]`
+  - Sorted. Empty when there are none.
+
+```lua
+local key = 'bank:' .. accountId
+local balance = GetResourceKvp(key) or 0
+SetResourceKvp(key, balance + 50)
+
+for _, k in ipairs(GetResourceKvpKeys('bank:')) do
+    print(k, GetResourceKvp(k))
+end
+
+DeleteResourceKvp('bank:old')
+```

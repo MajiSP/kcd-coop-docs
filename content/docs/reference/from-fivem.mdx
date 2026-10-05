@@ -1,0 +1,46 @@
+---
+title: Coming from FiveM
+description: What carries over from FiveM resources, and what is different.
+---
+
+Resources work much like FiveM's, so most habits carry over. These are the differences that catch people out.
+
+## The manifest
+
+| FiveM | KCD Co-op |
+| --- | --- |
+| `fxmanifest.lua` | `resource.lua` |
+| `fx_version`, `game`, `lua54` | **Remove them.** Any unknown directive stops the resource from starting. |
+| `client_scripts`, `server_scripts`, `shared_scripts`, `files`, `ui_page`, `dependencies` | The same. |
+| `exports`, `provide`, `data_file`, `this_is_a_map` | Not supported. |
+| Globs like `'html/**/*'` | One `*` in the file name only: `'html/*.png'`. |
+
+## Lua versions
+
+- The **server** runs Lua 5.4.
+- **Clients run the game's Lua 5.1**: no `//`, no bitwise operators, no `goto`, `unpack` instead of `table.unpack`, and numbers are 32-bit floats. See [Client scripting](/docs/client#the-games-lua-51).
+
+## Functions
+
+| FiveM | KCD Co-op |
+| --- | --- |
+| `Citizen.CreateThread`, `Citizen.Wait` | `CreateThread`, `Wait` (no `Citizen` table) |
+| `SetTimeout(ms, fn)` | The same, and the server has `ClearTimeout`. The client has no `ClearTimeout`. |
+| `RegisterCommand(name, fn(source, args, raw))` | The same on the server. **Client handlers get `(args, raw)`**, with no `source`. |
+| `RegisterKeyMapping(cmd, desc, 'keyboard', 'T')` | `RegisterKeyMapping(cmd, desc, 'T')`, with no input type. It fires on press only; there are no `+cmd`/`-cmd` pairs. |
+| `TriggerLatentClientEvent` | Not available. Payloads are limited to 16 KB. |
+| `exports.resource:fn()` | Not available. Use events between resources. |
+| `json.encode` / `json.decode` | No `json` library. Tables are encoded for you in events and KVP. |
+| `GetResourceKvpString` and friends | `SetResourceKvp` / `GetResourceKvp` store any value, including tables. |
+| `SetNuiFocus`, `SendNUIMessage`, `RegisterNUICallback` | The same. |
+| `GetParentResourceName()` in pages | The same. |
+| Natives (`GetEntityCoords`, ...) | The game's own Lua API: `player:GetWorldPos()`, `System.GetEntity`, and so on. |
+
+## Player identity
+
+- No `steam` or `license` as the main ID: when the server requires accounts, use the `account:` identifier, which the panel verifies. See [GetPlayerIdentifiers](/docs/server/players#getplayeridentifiers).
+- Player IDs start at 1 and are not reused until the server restarts.
+
+## The `source` global
+
+Works as in FiveM for net events, and is reset after the handler. Copy it into a local before any `SetTimeout` or `Wait`.

@@ -1,0 +1,29 @@
+---
+title: Limits
+description: Sizes, rates and ranges the platform enforces.
+---
+
+| What | Limit |
+| --- | --- |
+| Players on a server | 32 (set lower in **Settings > Server listing**) |
+| Player name | 24 bytes |
+| Chat line | 160 bytes |
+| `SendChatMessage` author | 48 bytes |
+| Event name | 64 bytes |
+| Event payload, server to player | 16 KB as JSON (a Lua error if larger) |
+| Event payload, player to server | 16 KB as JSON (the handler gets no arguments if larger) |
+| Events a player may send | 120 in a burst, refilled at 60 a second |
+| Unsent events queued on a player's PC | 256 |
+| Look (`SetPlayerAppearance`) | 2048 bytes as JSON |
+| `SpawnPlayer` outfit | 64 bytes |
+| `DropPlayer` reason | 200 bytes |
+| Identifiers per player | 16, 96 bytes each, plus `ip:` |
+| KVP key / value | 256 bytes / 64 KB as JSON |
+| Command name | 1 to 32 characters of `a-z 0-9 _ - : .` |
+| Client script | 256 KB a file, 2 MB a resource |
+| UI file | 4 MB a file, 16 MB a resource |
+| Table nesting passed between resources | 16 levels |
+| Time scale | 0 to 1000 game seconds per real second |
+| Spawn if no resource does | 10 seconds after joining |
+| Waiting for allowlist approval | 20 seconds, then refused |
+| Other players' positions, looks and clothes | Sent within 150 m, removed beyond 170 m |

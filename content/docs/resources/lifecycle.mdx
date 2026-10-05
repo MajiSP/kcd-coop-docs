@@ -1,0 +1,53 @@
+---
+title: Starting and stopping
+description: When resources start, how to restart one while players are online, and what happens to its state.
+---
+
+## At server start
+
+**Every** resource found in `resources` starts with the server, in alphabetical order of its name, with dependencies started first. There is no list of enabled resources: to turn one off, move its folder out of `resources`.
+
+If two folders have the same name, only the first one found is used and the other is ignored.
+
+## While the server runs
+
+Use the panel's **Live Console**:
+
+| Command | What it does |
+| --- | --- |
+| `resources` | Lists every resource and whether it is running, stopped or failed. |
+| `start <name>` | Starts a resource (and its dependencies) if it is not running. New folders are picked up first. |
+| `stop <name>` | Stops a resource. |
+| `restart <name>` / `ensure <name>` | Stops it if it runs, then starts it again with its current files. |
+| `refresh` | Looks for new resource folders without starting them. |
+
+A restart sends the resource's new client scripts and UI files to everyone online, so you can work on a resource without anyone rejoining.
+
+## What starting does
+
+1. The manifest is read.
+2. A fresh Lua 5.4 state is created, and the shared scripts then the server scripts run, in order.
+3. `onResourceStart(name)` fires in every running resource, **including the one that just started**.
+4. The client scripts and UI files are sent to everyone online.
+
+A syntax error in one file is logged and that file is skipped; the other files still run and the resource counts as started.
+
+## What stopping does
+
+1. `onResourceStop(name)` fires in every running resource, including the one stopping. This is your chance to save.
+2. The resource's commands, timers and threads are removed and its Lua state is closed. Everything in its globals is gone.
+3. Players are told to stop it: its client scripts get `onClientResourceStop` and its UI page is closed.
+
+Data saved with [`SetResourceKvp`](/docs/server/kvp) survives restarts.
+
+```lua
+AddEventHandler('onResourceStop', function(name)
+    if name == GetCurrentResourceName() then
+        print('saving before stop')
+    end
+end)
+```
+
+<Callout type="info">
+  At server start a resource receives `onResourceStart` for itself and for every resource that starts **after** it, but not for those that started before it.
+</Callout>

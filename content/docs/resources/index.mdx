@@ -1,0 +1,91 @@
+---
+title: Resources
+description: A resource is a folder with a resource.lua manifest. This is how it is laid out.
+---
+
+Everything a server does beyond relaying players is a **resource**: a folder inside `resources` (next to `KCDCoopServer.exe`) that contains a `resource.lua` manifest. The folder name is the resource name.
+
+<Files>
+  <Folder name="resources" defaultOpen>
+    <Folder name="market" defaultOpen>
+      <File name="resource.lua" />
+      <File name="config.lua" />
+      <File name="server.lua" />
+      <File name="client.lua" />
+      <Folder name="html">
+        <File name="index.html" />
+        <File name="style.css" />
+      </Folder>
+    </Folder>
+    <Folder name="[gameplay]">
+      <Folder name="fishing" />
+      <Folder name="hunting" />
+    </Folder>
+  </Folder>
+</Files>
+
+Folders whose name starts with `[` and ends with `]` are **category folders**: they only group resources and are never a resource themselves.
+
+## The manifest
+
+```lua title="resource.lua"
+description 'Market stalls and prices'
+version '1.2.0'
+author 'Royalty'
+dependency 'worldmanager'
+
+shared_script 'config.lua'
+server_scripts { 'server/*.lua' }
+client_script 'client.lua'
+
+ui_page 'html/index.html'
+files { 'html/index.html', 'html/style.css', 'html/img/*.png' }
+```
+
+The manifest runs in a small Lua state of its own, with only the base library and `table`. These directives exist:
+
+| Directive | Kind | What it does |
+| --- | --- | --- |
+| `shared_script` / `shared_scripts` | list | Runs on the server (before the server scripts) **and** is sent to players (before the client scripts). |
+| `server_script` / `server_scripts` | list | Runs on the server, after the shared scripts, in order. |
+| `client_script` / `client_scripts` | list | Sent to players and run inside the game, after the shared scripts. |
+| `file` / `files` | list | Files your [UI page](/docs/ui) loads: HTML, CSS, JS, images, fonts, sounds. |
+| `ui_page` | field | The HTML page drawn over the game. It is added to the files automatically. |
+| `dependency` / `dependencies` | list | Resources that must start before this one. |
+| `description`, `version`, `author` | field | Shown in logs and the panel. |
+
+- List directives take a string or a table, and calling one twice **adds** to the list. Field directives keep the last value.
+- **Any other directive stops the resource from starting.** FiveM lines such as `fx_version 'cerulean'`, `game 'gta5'` or `lua54 'yes'` must be removed.
+- The manifest is read again on every start, so edits apply on `restart`.
+
+### Wildcards
+
+Every list directive and `ui_page` accept a `*` in the **last part** of the path: `server/*.lua`, `html/img/*.png`, `data/item_*.lua`.
+
+- Only one `*` counts, and only in the file name: no `**`, no `?`, no wildcards in folder names, no recursion into subfolders.
+- Matches are loaded in sorted order. A wildcard that matches nothing is not an error.
+
+<Callout type="warn" title="Paths without a wildcard are not checked">
+  A server or shared script that does not exist loads as an empty file, and a missing client script is sent as an empty file. A typo in a path therefore loads nothing, silently. A missing UI file is skipped.
+</Callout>
+
+## What runs where
+
+| | Server | Players' games |
+| --- | --- | --- |
+| Lua version | 5.4 | The game's own **Lua 5.1** |
+| Files | `shared_script`, then `server_script` | `shared_script`, then `client_script` |
+| One state per | resource | resource |
+| Read more | [Server scripting](/docs/server) | [Client scripting](/docs/client) |
+
+A shared script must therefore work on **both** Lua 5.4 and 5.1: no `//`, no bitwise operators, no `goto`, no `utf8`, no integer division.
+
+### What players download
+
+- **Client scripts** (shared + client): up to **256 KB a file** and **2 MB a resource**. Larger files are not sent, and the server log says so.
+- **UI files** (`files` + `ui_page`): up to **4 MB a file** and **16 MB a resource**. Paths containing `..` are dropped.
+- A resource is sent to players only if it has at least one client script or UI file. It reaches everyone online when it starts, and each player when they join.
+
+## Dependencies
+
+Each dependency starts (with its own dependencies) before the resource that needs it. A missing or failed dependency stops the resource from starting with the error `needs <name>`, and a loop is logged as `dependency loop`. Stopping a dependency does **not** stop the resources that depend on it.

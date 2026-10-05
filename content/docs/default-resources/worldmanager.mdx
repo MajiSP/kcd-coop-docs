@@ -1,0 +1,33 @@
+---
+title: worldmanager
+description: Sets the world clock and the weather for every player.
+---
+
+A server-only resource. It sets the clock when it starts, so `restart worldmanager` also resets the time of day.
+
+```lua title="resources/worldmanager/config.lua"
+Config.startTime = '07:30'
+Config.dayMinutes = 96
+Config.weather = nil
+Config.weatherCycle = {}
+Config.weatherMinutes = 30
+```
+
+| Option | Default | What it does |
+| --- | --- | --- |
+| `startTime` | `'07:30'` | The time of day when the server starts, as `HH:MM`. |
+| `dayMinutes` | `96` | How many real minutes a full game day lasts. The game's own is 96. |
+| `weather` | `nil` | One fixed preset for everyone, or `nil` for the game's own changing weather. |
+| `weatherCycle` | `{}` | A list of presets to rotate through. When it is not empty, `weather` is ignored. |
+| `weatherMinutes` | `30` | Real minutes between changes in `weatherCycle`. |
+
+**Weather presets:** `cloudless_sunny`, `semicloudy_clear`, `cloudy_no_rain`, `summer_overcast`, `cloudy_frequent_showers`, `foggy_drizzly`, `foggy_storm_no_rain`, `foggy_storm`.
+
+```lua title="A rainy evening server"
+Config.startTime = '18:00'
+Config.dayMinutes = 180
+Config.weatherCycle = { 'cloudy_frequent_showers', 'foggy_drizzly', 'cloudy_no_rain' }
+Config.weatherMinutes = 20
+```
+
+Admins can also change these live with the `time`, `timeratio` and `weather` [console commands](/docs/getting-started/panel#console-commands), and scripts with the [World functions](/docs/server/world).

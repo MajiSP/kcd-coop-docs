@@ -1,0 +1,55 @@
+---
+title: Files and output
+description: The resource's own name, reading its files, and writing to the server log.
+---
+
+## GetCurrentResourceName
+
+```lua
+GetCurrentResourceName()
+```
+
+**Returns**
+
+- name: `string`
+  - This resource's folder name.
+
+## LoadResourceFile
+
+Reads a file from a resource's folder.
+
+```lua
+LoadResourceFile(resourceName, fileName)
+```
+
+- resourceName: `string`
+  - Any resource the server found, running or not.
+- fileName: `string`
+  - A path relative to that resource's folder.
+
+**Returns**
+
+- contents?: `string`
+  - Nothing when the resource or file does not exist, or the path contains `..`.
+
+```lua
+local raw = LoadResourceFile(GetCurrentResourceName(), 'data/prices.txt')
+if raw then
+    for line in raw:gmatch('[^\r\n]+') do
+        print(line)
+    end
+end
+```
+
+## print
+
+Writes a line to the server log and the panel's Live Console.
+
+```lua
+print(...)
+```
+
+- ...: `any`
+  - Converted with `tostring` and joined with tabs.
+
+Lines appear as `[HH:MM:SS] [<resource>] <text>`.

@@ -1,0 +1,74 @@
+---
+title: Callbacks
+description: Call Lua from the page, and get an answer back.
+---
+
+A page calls its resource's Lua with `fetch` to `https://<resource>/<callback name>`. The client script answers with a [`RegisterNUICallback`](#registernuicallback) handler.
+
+```js title="html/app.js"
+function post(name, data) {
+  return fetch(`https://${GetParentResourceName()}/${name}`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(data ?? {}),
+  }).then((response) => response.json());
+}
+
+post('submit', { text: 'hello' }).then((result) => {
+  console.warn(JSON.stringify(result));
+});
+```
+
+## RegisterNUICallback
+
+```lua
+RegisterNUICallback(name, handler)
+```
+
+- name: `string`
+  - The path after the resource name, matched exactly (case-sensitive).
+- handler: `function(data, cb)`
+  - data: `any`
+    - The request body, decoded from JSON.
+  - cb: `function(result)`
+    - Call it once to answer. `result` is sent back as JSON.
+
+One handler per name per resource; registering a name again replaces it.
+
+```lua
+RegisterNUICallback('submit', function(data, cb)
+    SetNuiFocus(false, false)
+    local text = string.sub(tostring(data and data.text or ''), 1, 160)
+    if text ~= '' then
+        SendChat(text)
+    end
+    cb({ ok = true })
+end)
+```
+
+<Callout type="error" title="Always call cb">
+  The page's `fetch` waits until `cb` is called. If your handler errors before calling it, or forgets to, the `fetch` **never resolves**. Call `cb` on every path, even when you refuse the request.
+</Callout>
+
+## The request body
+
+| Body | `data` in Lua |
+| --- | --- |
+| JSON starting with `{`, `[` or `"` | The decoded value |
+| Empty | `nil` |
+| Anything else (`42`, `true`, plain text) | A **string** (`'42'`) |
+
+A body that starts with `{` or `[` but is not valid JSON is dropped, and its `fetch` never resolves. Always send `JSON.stringify(...)`.
+
+## The answer
+
+- `cb(result)` answers with status 200 and `result` as JSON. An empty table is sent as `[]`, and `nil` as `null`.
+- `cb` may be called later, from a timer or a thread; the request stays open until then. A second call is ignored.
+- A callback name nothing registered answers `{ "error": "no NUI callback <name>" }`.
+- Answers arrive one or more game frames later, never in the same frame.
+
+<Callout type="warn" title="Treat page data like player input">
+  A page can call **any** resource's callbacks by using that resource's name, and a player can tamper with what their own page sends. Check every value in your callbacks, and check again on the server.
+</Callout>
+
+Resource names that have a UI page should be **lower-case**: browsers lower-case the address, so a resource named `MyShop` would not receive its callbacks.

@@ -1,0 +1,45 @@
+---
+title: Messages
+description: Send data from a client script to the resource's page.
+---
+
+## SendNUIMessage
+
+```lua
+SendNUIMessage(data)
+```
+
+- data: `table`
+  - Anything that can be JSON. It arrives in the page as `event.data`.
+
+The message goes only to **this** resource's page. Messages sent before the page has loaded are queued and delivered in order once it has, so a message sent at start-up is not lost.
+
+```lua
+SendNUIMessage({ type = 'open', gold = 120 })
+```
+
+```js title="html/app.js"
+window.addEventListener('message', (event) => {
+  const data = event.data || {};
+  if (data.type === 'open') {
+    document.body.classList.add('open');
+    document.getElementById('gold').textContent = data.gold;
+  }
+});
+```
+
+An empty table arrives as `[]`, because an empty Lua table encodes as an array.
+
+## Let Lua speak first
+
+The page usually starts loading **before** the resource's Lua runs. A page that calls a [callback](/docs/ui/callbacks) the moment it loads may get `{ "error": "no NUI callback ..." }` because the Lua side has not registered it yet.
+
+The reliable pattern is for Lua to send the first message, from `onClientResourceStart`, and for the page to wait for it:
+
+```lua
+AddEventHandler('onClientResourceStart', function(name)
+    if name == GetCurrentResourceName() then
+        SendNUIMessage({ type = 'config', config = { fadeSeconds = 12, maxMessages = 100 } })
+    end
+end)
+```

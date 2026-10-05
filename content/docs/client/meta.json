@@ -1,0 +1,10 @@
+{
+  "title": "Client scripting",
+  "pages": [
+    "events",
+    "commands",
+    "timers",
+    "appearance"
+  ],
+  "defaultOpen": false
+}

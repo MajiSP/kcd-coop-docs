@@ -1,13 +1,42 @@
 ---
-title: Hello World
-description: Your first document
+title: Introduction
+description: What KCD Co-op is, and where to start in these docs.
 ---
 
-Welcome to the docs! You can start writing documents in `/content/docs`.
-
-## What is Next?
+KCD Co-op is a multiplayer platform for **Kingdom Come: Deliverance II**. You run a server, players join it from the KCD Co-op launcher, and everything that happens in the world is decided by **resources**: folders of Lua scripts and web pages that you write or install, in the same spirit as FiveM.
 
 <Cards>
-  <Card title="Learn more about Next.js" href="https://nextjs.org/docs" />
-  <Card title="Learn more about Fumadocs" href="https://fumadocs.dev" />
+  <Card title="Run a server" href="/docs/getting-started" description="Download the server, open the panel, forward the ports and let players in." />
+  <Card title="Default resources" href="/docs/default-resources" description="Chat, appearance, spawning and the world clock that every server ships with." />
+  <Card title="Write a resource" href="/docs/resources" description="The resource.lua manifest, how resources start, and how files reach players." />
+  <Card title="Server scripting" href="/docs/server" description="Lua 5.4 on the server: players, events, commands, saved data and the world." />
+  <Card title="Client scripting" href="/docs/client" description="Lua inside the game: events, commands, key bindings and talking to the server." />
+  <Card title="UI pages" href="/docs/ui" description="HTML, CSS and JavaScript shown in game, and how they talk to your Lua." />
 </Cards>
+
+## How it fits together
+
+<Files>
+  <Folder name="KCDCoop-server" defaultOpen>
+    <File name="KCDCoopServer.exe (the panel: start this)" />
+    <Folder name="bin">
+      <File name="KCDCoopGame.exe (the game server the panel runs)" />
+    </Folder>
+    <Folder name="resources" defaultOpen>
+      <Folder name="chat" />
+      <Folder name="appearance" />
+      <Folder name="spawnmanager" />
+      <Folder name="worldmanager" />
+      <Folder name="[your-folder]" />
+    </Folder>
+    <Folder name="kvp (data your resources save)" />
+  </Folder>
+</Files>
+
+- **The panel** (`KCDCoopServer.exe`) is a web admin panel in the style of txAdmin. It starts and watches the game server, shows the console, players and bans, and holds your settings.
+- **The game server** runs every resource's **server scripts** (Lua 5.4) and relays players to each other.
+- **Players' games** run each resource's **client scripts** inside Kingdom Come's own Lua, and show its **UI page** in an embedded browser on top of the game.
+
+<Callout type="info" title="Versions">
+  The server and the players must run the same KCD Co-op build. The launcher downloads the right one for each server automatically, and the panel can update the server for you.
+</Callout>

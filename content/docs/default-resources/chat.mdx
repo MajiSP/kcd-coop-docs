@@ -1,0 +1,80 @@
+---
+title: chat
+description: The chat box, commands with suggestions, history and private messages.
+---
+
+```lua title="resources/chat/config.lua"
+Config.openKey = 'T'
+Config.fadeSeconds = 12
+Config.maxMessages = 100
+Config.historySize = 30
+Config.showSystemMessages = true
+Config.privateMessages = true
+```
+
+| Option | Default | What it does |
+| --- | --- | --- |
+| `openKey` | `'T'` | The key that opens the chat box. Any key [`RegisterKeyMapping`](/docs/client/commands#registerkeymapping) accepts. |
+| `fadeSeconds` | `12` | Seconds after the last message before the box fades. `0` keeps it visible. |
+| `maxMessages` | `100` | Messages kept in the box. |
+| `historySize` | `30` | Lines a player can recall with the arrow keys. |
+| `showSystemMessages` | `true` | Show joins, leaves and other `system` and `notice` messages. |
+| `privateMessages` | `true` | Adds `/msg <player id> <message>`. |
+
+## For players
+
+- `T` opens the box; `Enter` sends; `Esc` closes.
+- Lines starting with `/` run a command. While typing one, up to 6 suggestions appear: `Tab` completes, the arrow keys choose.
+- The arrow keys also recall lines sent earlier. `Page Up` and `Page Down` scroll.
+- `/clear` empties the box.
+
+## Sending messages from scripts
+
+From the server, send `chat:addMessage` to one player or everyone:
+
+```lua
+TriggerClientEvent('chat:addMessage', -1, { kind = 'notice', author = 'Bailiff', text = 'The market opens at dawn.' })
+```
+
+From a client script, trigger it locally:
+
+```lua
+TriggerEvent('chat:addMessage', { kind = 'system', text = 'Saved.' })
+```
+
+### The message
+
+<TypeTable
+  type={{
+    kind: { type: "'player' | 'server' | 'system' | 'notice' | 'private'", description: 'The style of the line. Anything else is shown as player.', default: "'player'" },
+    author: { type: 'string', description: 'Shown before the text as author:. For private messages it reads To author: or From author:.' },
+    text: { type: 'string', description: 'The message. ^0 to ^9 switch the colour from that point on.' },
+    color: { type: '{ r, g, b }', description: 'Colours the author name (0 to 255).' },
+    direction: { type: "'to' | 'from'", description: 'For private messages: who it was sent to or received from.' },
+  }}
+/>
+
+FiveM-style messages work too: `{ args = { author, text }, color = { r, g, b } }`.
+
+### Colour codes
+
+`^0` dark ink, `^1` red, `^2` green, `^3` ochre, `^4` blue, `^5` teal, `^6` purple, `^7` normal text, `^8` orange-brown, `^9` grey.
+
+```lua
+SendChatMessage(-1, 'Herald', 'The ^1king^7 arrives at ^3noon^7.')
+```
+
+## Command suggestions
+
+The chat suggests every server command registered with help text, and every client command with help. To add or change one from a server script:
+
+```lua
+TriggerEvent('chat:addSuggestion', '/fish', 'Cast your line')
+TriggerEvent('chat:removeSuggestion', '/fish')
+```
+
+These are **server** events: trigger them from a server script, not from the client.
+
+## Clearing the box
+
+`TriggerEvent('chat:clear')` from a **client** script empties the box. It is not a net event, so the server cannot trigger it.

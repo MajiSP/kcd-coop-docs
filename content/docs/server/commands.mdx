@@ -1,0 +1,61 @@
+---
+title: Commands
+description: Chat and console commands registered by resources.
+---
+
+## RegisterCommand
+
+Adds a command players can type in chat (`/name`) and admins can type in the Live Console.
+
+```lua
+RegisterCommand(name, handler, help?)
+```
+
+- name: `string`
+  - 1 to 32 characters of `a-z`, `0-9`, `_`, `-`, `:` and `.`. It is lower-cased.
+- handler: `function(source, args, raw)`
+  - source: `integer`
+    - The player's ID, or `0` from the Live Console.
+  - args: `string[]`
+    - The words after the command name, split on spaces (no quoting).
+  - raw: `string`
+    - From chat: the whole line without the leading `/`. From the console: the line as typed.
+- help?: `string`
+  - Shown in the chat's command suggestions.
+
+Commands are shared by all resources. Registering a name that exists replaces it, and a resource's commands are removed when it stops.
+
+<Callout type="warn" title="There are no permissions">
+  Anyone can run any command. Check `source` yourself: `0` is the console, and you decide who else may use it.
+</Callout>
+
+```lua
+RegisterCommand('heal', function(source, args, raw)
+    local target = tonumber(args[1]) or source
+    if target == 0 or not GetPlayerName(target) then
+        print('usage: heal <id>')
+        return
+    end
+    SpawnPlayer(target, { revive = true })
+end, 'Revive a player: /heal [id]')
+```
+
+**From chat**
+
+- The command name is matched in any case. A player who types an unknown command gets `Unknown command /<name>`.
+- Commands never appear in the chat feed, and the server log only records which command a player used, not what they typed after it.
+
+**From the Live Console**
+
+A resource command runs only if the line is not one of the [console commands](/docs/getting-started/panel#console-commands). A command named `help`, `time`, `say`, `kick` or `stop` therefore works from chat but not from the console.
+
+## GetRegisteredCommands
+
+```lua
+GetRegisteredCommands()
+```
+
+**Returns**
+
+- commands: `{ name: string, help: string, resource: string }[]`
+  - Every resource's commands, sorted by name. The chat resource uses this for its suggestions.

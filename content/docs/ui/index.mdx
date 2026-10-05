@@ -1,0 +1,68 @@
+---
+title: UI pages
+description: HTML, CSS and JavaScript shown over the game, and how they reach players.
+---
+
+A resource can show a web page over the game: menus, a HUD, a character creator. It is drawn by an embedded Chromium on top of the game and talks to the resource's [client scripts](/docs/client).
+
+## Declaring a page
+
+```lua title="resource.lua"
+client_script 'client.lua'
+
+ui_page 'html/index.html'
+files {
+    'html/index.html',
+    'html/style.css',
+    'html/app.js',
+    'html/img/*.png',
+    'html/fonts/*.woff2',
+}
+```
+
+- `ui_page` is the page to show; it is added to `files` automatically.
+- `files` lists everything the page loads. Wildcards work on the file name (see [Wildcards](/docs/resources#wildcards)).
+- Limits: **4 MB a file, 16 MB a resource.** Larger files are skipped and the server log says so.
+
+## How it works
+
+- Every resource with a UI page gets its own **full-screen, transparent layer**. Pages can be drawn without taking any input, which suits HUDs; to take the keyboard or mouse, use [`SetNuiFocus`](/docs/ui/focus).
+- Pages are served from `https://ui.kcdcoop/<resource>/...`, so relative links (`style.css`, `img/logo.png`) just work.
+- The page is the size of the game's screen, one CSS pixel per screen pixel. Use `vh`/`vw` or a `rem` based on the height to scale with resolution.
+- Files are read fresh on every request (nothing is cached), and a restart of the resource sends the new files to everyone online.
+
+### `GetParentResourceName()`
+
+Every HTML page served gets a global function `GetParentResourceName()` that returns the resource's name, for building [callback](/docs/ui/callbacks) URLs.
+
+<Callout type="warn" title="Always write a <head>">
+  The script that defines `GetParentResourceName` is inserted right after your `<head>` tag. Without a `<head>`, it lands before the `<!doctype html>` and the page renders in quirks mode.
+</Callout>
+
+### File types
+
+HTML, JavaScript (`.js`, `.mjs`), CSS, JSON, images (`.png`, `.jpg`, `.gif`, `.webp`, `.svg`, `.ico`), fonts (`.woff`, `.woff2`, `.ttf`, `.otf`), audio (`.mp3`, `.ogg`, `.wav`), video (`.mp4`, `.webm`) and `.txt` are served with the right type. Anything else is sent as `application/octet-stream`.
+
+### Rendering
+
+- 60 frames a second, alpha-blended over the game.
+- Drawn in software (the GPU is turned off for the browser), so keep heavy effects light: prefer opacity and transform animations, and pre-render textures to images instead of SVG filters.
+- Audio and video can play without a click.
+- External URLs (web fonts, CDNs) are not blocked, but players may be offline or behind a firewall: ship your files with the resource.
+
+### Things a page cannot do
+
+- **Open windows.** `window.open` and `target="_blank"` are refused.
+- **Use browser shortcuts.** Refresh, developer tools, zoom and most `Ctrl` shortcuts are swallowed. Copy, cut, paste, select-all and undo work.
+- **Keep data between game sessions.** All pages share one storage origin, and it is wiped when the game restarts. Prefix `localStorage` keys with your resource name, and keep anything that must last on the server.
+
+### Debugging
+
+`console.warn` and `console.error` from your page are written to the player's `kcdcoop.log` as `[ui] message (source:line)`. `console.log` is not.
+
+<Cards>
+  <Card title="Messages" href="/docs/ui/messages" description="Send data from Lua to the page with SendNUIMessage." />
+  <Card title="Callbacks" href="/docs/ui/callbacks" description="Call Lua from the page with fetch and RegisterNUICallback." />
+  <Card title="Focus" href="/docs/ui/focus" description="Give the page the keyboard and mouse with SetNuiFocus." />
+  <Card title="Example" href="/docs/ui/example" description="A complete resource with a page, a command and a key." />
+</Cards>

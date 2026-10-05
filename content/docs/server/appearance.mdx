@@ -1,0 +1,55 @@
+---
+title: Appearance
+description: Give a player a face, hair, beard and skin that every other player sees.
+---
+
+A **look** is the parts of the game's characters that a player's body wears, named as the game names them:
+
+```lua
+{ body = 'm_body_tan_02', head = 'm_head_046', hair = 'm_hair_009_black', beard = 'm_beard_17' }
+```
+
+`resources/appearance/parts.lua` lists every face, hairstyle (with its colours), beard and skin a man's body can wear. The [appearance](/docs/default-resources/appearance) resource builds its character screen from that list.
+
+<Callout type="info" title="Clothes are not part of a look">
+  Clothes are synced by the game itself: every player sees the others wearing what they really wear, and it updates when they change. You do not need to do anything for it.
+</Callout>
+
+## SetPlayerAppearance
+
+```lua
+SetPlayerAppearance(id, look?)
+```
+
+- id: `integer`
+- look?: `table`
+  - At most 2048 bytes as JSON. `nil` stops sending a look; the body keeps the parts it has.
+
+**Returns**
+
+- sent: `boolean`
+  - `false` when the player is not online.
+
+The look is applied to the player's own body and to their character in the games of everyone near them. Players who come near later get it then. It is forgotten when the player leaves, so store it yourself (see [KVP](/docs/server/kvp)) and set it again in `playerJoined`.
+
+The server does not check the part names. Check them against `Parts` before you call this with anything a player sent.
+
+## GetPlayerAppearance
+
+```lua
+GetPlayerAppearance(id)
+```
+
+- id: `integer`
+
+**Returns**
+
+- look?: `table`
+  - Nothing when the player is offline or has no look.
+
+```lua
+SetPlayerAppearance(id, { body = 'm_body_tan_02', head = 'm_head_046', hair = 'm_hair_009_black', beard = 'm_beard_17' })
+
+local look = GetPlayerAppearance(id)
+print(look and look.head)
+```

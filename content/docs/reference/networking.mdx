@@ -1,0 +1,34 @@
+---
+title: Networking and other players
+description: What players receive about each other, and how other players appear in game.
+---
+
+## Range
+
+The server only tells each player about the players **near them**:
+
+- Within **150 m**, a player's position, look and clothes are sent. When someone comes into range, everything about them is sent at once, from the server's cache.
+- Beyond **170 m**, they are removed. The gap between the two distances stops players at the edge from appearing and vanishing over and over.
+
+Players far away cost no bandwidth and no performance. Positions are only sent to players in range; looks and clothes are sent once, when someone comes into range or changes them.
+
+Names, chat and joins and leaves still reach everyone.
+
+## How other players appear
+
+Each player in range is drawn as a **stand-in**: the game's own mannequin, which has no AI.
+
+- It wears the player's look and **the clothes they really wear**. When the player changes clothes in their inventory, the change reaches everyone in range straight away.
+- Movement is smoothed between updates, and the stand-in walks, runs or sprints to match the player's speed.
+- The player's name is drawn above it.
+
+Clothes need no scripting. The game reports equipment changes to the platform, which sends the new outfit to the server, which passes it to the players in range.
+
+<Callout type="info">
+  Stand-ins have no physics, so players can walk through each other.
+</Callout>
+
+## What scripts see
+
+- On the server, `GetPlayers`, `GetPlayerPosition` and the other player functions cover **every** player, whatever their range.
+- On a client, `GetPlayerAppearance(id)` only knows players who have been in range, and `playerAppearanceChanged` fires when one comes into range. There is no client function that turns a player ID into their stand-in entity.

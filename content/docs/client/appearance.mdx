@@ -1,0 +1,103 @@
+---
+title: Appearance
+description: Read looks, and show a preview character for a character creator or barber.
+---
+
+A look names the parts a body wears, as described in the server's [Appearance](/docs/server/appearance) page:
+
+```lua
+{ body = 'm_body_tan_02', head = 'm_head_046', hair = 'm_hair_009_black', beard = 'm_beard_17' }
+```
+
+Looks are set by the server with `SetPlayerAppearance`. The client can read them and show a **preview character** for picking one.
+
+## GetPlayerAppearance
+
+```lua
+GetPlayerAppearance(id)
+```
+
+- id: `number`
+  - A server player ID. Use `GetPlayerServerId()` for yourself.
+
+**Returns**
+
+- look?: `table`
+  - The last look the server sent for that player.
+
+You only know looks for yourself and for players the server has sent you (those within [range](/docs/reference/networking)). A look stays known after the player moves out of range and is forgotten when they leave the server, so it can be out of date. The table is the platform's own copy: **copy it before changing it.**
+
+```lua
+local look = GetPlayerAppearance(GetPlayerServerId())
+if look then
+    print(look.head, look.hair)
+end
+```
+
+## ShowAppearancePreview
+
+Shows a character in front of the player wearing a look: the mirror of a character creator or barber.
+
+```lua
+ShowAppearancePreview(look)
+```
+
+- look: `table`
+
+**Returns**
+
+- shown: `boolean`
+  - `false` when the character could not be spawned or the look could not be applied. The reason is in `kcdcoop.log`.
+
+The first call spawns the character 1.6 m in front of the player, facing them, and points the player's view at it. It is the game's own mannequin, so it has no AI. It wears **the clothes the player is wearing** and keeps them on. Later calls change the look on the same character.
+
+## TurnAppearancePreview
+
+```lua
+TurnAppearancePreview(degrees)
+```
+
+- degrees: `number`
+  - The angle from the starting position, where `0` faces the player. It is absolute, not added to the last turn.
+
+**Returns**
+
+- shown: `boolean`
+  - `false` when there is no preview character.
+
+The character eases smoothly to the new angle.
+
+## ZoomAppearancePreview
+
+```lua
+ZoomAppearancePreview(distance)
+```
+
+- distance: `number`
+  - Metres from the player along the starting view line, from `0.9` to `2.5`. Default `1.6`.
+
+**Returns**
+
+- shown: `boolean`
+
+## HideAppearancePreview
+
+Removes the preview character. Safe to call when there is none.
+
+```lua
+HideAppearancePreview()
+```
+
+Call it when your screen closes and in `onClientResourceStop`: a stopping resource does not remove it for you.
+
+```lua
+SetNuiFocus(true, true)
+if ShowAppearancePreview({ body = 'm_body_tan_02', head = 'm_head_046', hair = 'm_hair_009_black', beard = 'm_beard_17' }) then
+    TurnAppearancePreview(90)
+    ZoomAppearancePreview(2.0)
+end
+
+-- when the screen closes
+HideAppearancePreview()
+SetNuiFocus(false, false)
+```
